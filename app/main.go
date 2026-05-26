@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -48,14 +50,51 @@ func main() {
 	}
 }
 
-func processCmd(cmd string) {
-	switch strings.Split(cmd, " ")[0] {
+func processCmd(command string) {
+	cmd := strings.Split(command, " ")
+	args := cmd[1:]
+	switch cmd[0] {
 	case string(Echo):
-		builtins[Echo](cmd)
+		builtins[Echo](command)
+		return
 	case string(Type):
-		builtins[Type](cmd)
+		builtins[Type](command)
+		return
 	default:
-		fmt.Println(cmd + ": command not found")
+		// check if exists in PATH as executable
+		found := scanPath(os.Getenv("PATH"), cmd[0])
+		// if exists and executable then execute passing args if any
+		if found != nil {
+			run := exec.Command(*found, args...)
+
+			stdout, err := run.StdoutPipe()
+			if err != nil {
+				return
+			}
+
+			stderr, err := run.StderrPipe()
+			if err != nil {
+				return
+			}
+
+			if err := run.Start(); err != nil {
+				return
+			}
+
+			stdoutBytes, _ := io.ReadAll(stdout)
+			stderrBytes, _ := io.ReadAll(stderr)
+
+			if err := run.Wait(); err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Print(string(stdoutBytes))
+			fmt.Print(string(stderrBytes))
+			return
+		}
+		// if not: print command not found
+		fmt.Println(command + ": command not found")
+		return
 	}
 }
 
@@ -106,6 +145,7 @@ func scanPath(paths, arg string) *string {
 	}
 	return nil
 }
+
 func handleEcho(cmd string) {
 	args := strings.Fields(cmd)[1:]
 	fmt.Println(strings.Join(args, " "))
