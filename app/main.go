@@ -137,7 +137,7 @@ func scanPath(paths, arg string) *string {
 				}
 				var isExec bool = info.Mode().Perm()&0100 != 0
 				if isExec && arg == dirEnt.Name() {
-					found := entries[i] + "/" + dirEnt.Name()
+					found := dirEnt.Name()
 					return &found
 				}
 			}
