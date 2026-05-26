@@ -29,5 +29,5 @@ func main() {
 func processCmd(cmd string) {
 	if strings.TrimSpace(cmd) == "exit" {
 	}
-	fmt.Println(cmd[:len(cmd)-1] + ": command not found")
+	fmt.Println(cmd + ": command not found")
 }
