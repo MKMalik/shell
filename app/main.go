@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	handlers "github.com/codecrafters-io/shell-starter-go/app/handlers"
+	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 )
 
