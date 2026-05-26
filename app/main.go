@@ -15,6 +15,7 @@ var builtinNames = map[Builtin]struct{}{
 var builtins = map[Builtin]func(string){
 	Echo: handleEcho,
 	Type: handleType,
+	Exit: func(s string) {},
 }
 
 func isBuiltin(cmd string) bool {
