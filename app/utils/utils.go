@@ -34,3 +34,8 @@ func ScanPath(paths, arg string) (*string, *string) {
 	}
 	return nil, nil
 }
+
+func IsDirExists(path string) bool {
+	info, err := os.Lstat(path)
+	return err == nil && info.IsDir()
+}
