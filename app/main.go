@@ -84,7 +84,8 @@ func scanPath(paths, arg string) *string {
 	for i := range entries {
 		dirEntries, err := os.ReadDir(entries[i])
 		if err != nil {
-			panic(err)
+			// panic(err)
+			continue
 		}
 		for _, dirEnt := range dirEntries {
 			if dirEnt.IsDir() {
