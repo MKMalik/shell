@@ -10,6 +10,7 @@ import (
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
+	"github.com/google/shlex"
 )
 
 func main() {
@@ -32,9 +33,12 @@ func main() {
 }
 
 func processCmd(command string) {
-	cmd := strings.Split(command, " ")
-	args := cmd[1:]
-	switch cmd[0] {
+	fields, _ := shlex.Split(command)
+	if len(fields) == 0 {
+		return
+	}
+	args := fields[1:]
+	switch fields[0] {
 	case string(handlers.Echo):
 		handlers.Builtins[handlers.Echo](command)
 		return
@@ -47,7 +51,7 @@ func processCmd(command string) {
 		handlers.Builtins[handlers.Cd](args[0])
 	default:
 		// check if exists in PATH as executable
-		found, _ := utils.ScanPath(os.Getenv("PATH"), cmd[0])
+		found, _ := utils.ScanPath(os.Getenv("PATH"), fields[0])
 		// if exists and executable then execute passing args if any
 		if found != nil {
 			run := exec.Command(*found, args...)

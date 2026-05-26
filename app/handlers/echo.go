@@ -7,11 +7,11 @@ import (
 	"github.com/google/shlex"
 )
 
-func HandleEcho(cmd string) {
-	args, err := shlex.Split(cmd)
-	if err != nil {
-		fmt.Println(err)
+func HandleEcho(command string) {
+	fields, _ := shlex.Split(command)
+	if len(fields) == 0 {
 		return
 	}
-	fmt.Println(strings.Join(args[1:], " "))
+	args := fields[1:]
+	fmt.Println(strings.Join(args, " "))
 }
