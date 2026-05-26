@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
 
-var builtinNames = map[Builtin]struct{}{
-	// Echo: {},
-	// Type: {},
-}
+var builtinNames = map[Builtin]struct{}{}
 
 var builtins = map[Builtin]func(string){
 	Echo: handleEcho,
@@ -68,11 +66,44 @@ func handleType(cmd string) {
 	}
 	arg := fields[1]
 	if !isBuiltin(arg) {
+		paths := os.Getenv("PATH")
+		found := scanPath(paths, arg)
+		if found != nil {
+			fmt.Println(arg + " is " + *found)
+			return
+		}
 		fmt.Println(arg + ": not found")
 		return
 	}
 
 	fmt.Println(arg + " is a shell builtin")
+}
+
+func scanPath(paths, arg string) *string {
+	entries := strings.Split(paths, ":")
+	for i := range entries {
+		dirEntries, err := os.ReadDir(entries[i])
+		if err != nil {
+			panic(err)
+		}
+		for _, dirEnt := range dirEntries {
+			if dirEnt.IsDir() {
+				scanPath(entries[i]+"/"+dirEnt.Name(), arg)
+			} else {
+				info, err := dirEnt.Info()
+				if err != nil {
+					log.Printf("Error getting info for %s: %v", dirEnt.Name(), err)
+					continue
+				}
+				var isExec bool = info.Mode().Perm()&0100 != 0
+				if isExec && arg == dirEnt.Name() {
+					found := entries[i] + "/" + dirEnt.Name()
+					return &found
+				}
+			}
+		}
+	}
+	return nil
 }
 func handleEcho(cmd string) {
 	args := strings.Fields(cmd)[1:]
