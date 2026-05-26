@@ -62,7 +62,7 @@ func processCmd(command string) {
 		return
 	default:
 		// check if exists in PATH as executable
-		found := scanPath(os.Getenv("PATH"), cmd[0])
+		found, _ := scanPath(os.Getenv("PATH"), cmd[0])
 		// if exists and executable then execute passing args if any
 		if found != nil {
 			run := exec.Command(*found, args...)
@@ -106,9 +106,9 @@ func handleType(cmd string) {
 	arg := fields[1]
 	if !isBuiltin(arg) {
 		paths := os.Getenv("PATH")
-		found := scanPath(paths, arg)
-		if found != nil {
-			fmt.Println(arg + " is " + *found)
+		_, full := scanPath(paths, arg)
+		if full != nil {
+			fmt.Println(arg + " is " + *full)
 			return
 		}
 		fmt.Println(arg + ": not found")
@@ -118,7 +118,7 @@ func handleType(cmd string) {
 	fmt.Println(arg + " is a shell builtin")
 }
 
-func scanPath(paths, arg string) *string {
+func scanPath(paths, arg string) (*string, *string) {
 	entries := strings.Split(paths, ":")
 	for i := range entries {
 		dirEntries, err := os.ReadDir(entries[i])
@@ -138,12 +138,13 @@ func scanPath(paths, arg string) *string {
 				var isExec bool = info.Mode().Perm()&0100 != 0
 				if isExec && arg == dirEnt.Name() {
 					found := dirEnt.Name()
-					return &found
+					full := entries[i] + "/" + found
+					return &found, &full
 				}
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func handleEcho(cmd string) {
