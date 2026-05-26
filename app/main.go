@@ -27,7 +27,15 @@ func main() {
 }
 
 func processCmd(cmd string) {
-	if strings.TrimSpace(cmd) == "exit" {
+	switch strings.Split(cmd, " ")[0] {
+	case "echo":
+		handleEcho(cmd)
+	default:
+		fmt.Println(cmd + ": command not found")
 	}
-	fmt.Println(cmd + ": command not found")
+}
+
+func handleEcho(cmd string) {
+	args := strings.Fields(cmd)[1:]
+	fmt.Println(strings.Join(args, " "))
 }
