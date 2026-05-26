@@ -3,19 +3,14 @@ package handlers
 import (
 	"fmt"
 	"os"
-	"os/user"
 
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 )
 
 func HandleCd(dir string) {
 	if dir == "~" {
-		usr, err := user.Current()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		err = os.Chdir(usr.HomeDir)
+		usr := os.Getenv("HOME")
+		err := os.Chdir(usr)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -36,7 +31,7 @@ func HandleCd(dir string) {
 			return
 		}
 		if exists := utils.IsDirExists(pwd + "/" + dir); !exists {
-			fmt.Println("cd: " + dir + ": No such file or directory")
+			fmt.Println("cd: /" + dir + ": No such file or directory")
 			return
 		}
 	}
