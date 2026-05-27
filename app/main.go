@@ -32,22 +32,42 @@ func main() {
 			break
 		}
 
-		redirectTo := strings.Split(cmd, "1>")
+		redirectStdoutTo := strings.Split(cmd, "1>")
+		redirectStderrTo := strings.Split(cmd, "2>")
 
-		if len(redirectTo) < 2 {
-			redirectTo = strings.Split(cmd, ">")
+		redirectingStdout := len(redirectStdoutTo) > 1
+		redirectingStderr := len(redirectStderrTo) > 1
+
+		if !redirectingStdout {
+			redirectStdoutTo = strings.Split(cmd, ">")
+			redirectingStdout = len(redirectStdoutTo) > 1
 		}
 
-		if len(redirectTo) > 1 {
-			redirectCmd := redirectTo[0]
-			redirect := redirectTo[1]
+		// stderr redirect
+		if redirectingStderr {
+			redirectCmd := strings.TrimSpace(redirectStderrTo[0])
+			redirectFile := strings.TrimSpace(redirectStderrTo[1])
+
+			_, stderr := processCmd(redirectCmd)
+			// fmt.Println("Debug: " + stdout + stderr)
+
+			// if stdout != "" {
+			// 	fmt.Println(stdout)
+			// }
+
+			handleRedirectToFile(stderr, redirectFile)
+
+			continue
+		}
+
+		// stdout redirect
+		if redirectingStdout {
+			redirectCmd := strings.TrimSpace(redirectStdoutTo[0])
+			redirectFile := strings.TrimSpace(redirectStdoutTo[1])
 
 			stdout, stderr := processCmd(redirectCmd)
 
-			handleRedirectToFile(
-				strings.TrimSpace(stdout),
-				strings.TrimSpace(redirect),
-			)
+			handleRedirectToFile(stdout, redirectFile)
 
 			if stderr != "" {
 				fmt.Println(stderr)
@@ -71,7 +91,8 @@ func main() {
 func handleRedirectToFile(output, redirect string) {
 	file, err := os.Create(redirect)
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		return
 	}
 	defer file.Close()
 	file.WriteString(output)
