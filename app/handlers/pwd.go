@@ -9,5 +9,5 @@ func HandlePwd(cmd string) string {
 	if err != nil {
 		return err.Error()
 	}
-	return dir
+	return dir + "\n"
 }

@@ -17,11 +17,10 @@ func HandleType(cmd string) string {
 		paths := os.Getenv("PATH")
 		_, full := utils.ScanPath(paths, arg)
 		if full != nil {
-			return arg + " is " + *full
-
+			return arg + " is " + *full + "\n"
 		}
-		return arg + ": not found"
+		return arg + ": not found\n"
 	}
 
-	return arg + " is a shell builtin"
+	return arg + " is a shell builtin\n"
 }

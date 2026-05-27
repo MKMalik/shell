@@ -12,5 +12,8 @@ func HandleEcho(command string) string {
 		return ""
 	}
 	args := fields[1:]
-	return strings.Join(args, " ")
+	if len(args) == 0 {
+		return ""
+	}
+	return strings.Join(args, " ") + "\n"
 }

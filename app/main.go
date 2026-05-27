@@ -83,11 +83,10 @@ func main() {
 		stdout, stderr := processCmd(cmd)
 
 		if stdout != "" {
-			fmt.Println(stdout)
+			fmt.Print(stdout)
 		}
-
-		if stderr != "" {
-			fmt.Println(stderr)
+		if stderr != "" && strings.TrimSpace(stderr) != "" {
+			fmt.Print(stderr)
 		}
 	}
 }
@@ -95,7 +94,7 @@ func main() {
 func redirectToFile(stdout, stderr, file string, append bool, isStdErr bool) {
 	f, err := openFile(file, append)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Print(err)
 		return
 	}
 	defer f.Close()
@@ -105,7 +104,7 @@ func redirectToFile(stdout, stderr, file string, append bool, isStdErr bool) {
 		return
 	}
 
-	_, _ = f.WriteString(stdout + "\n")
+	_, _ = f.WriteString(stdout)
 }
 
 func openFile(name string, append bool) (*os.File, error) {
@@ -120,10 +119,10 @@ func redirectAppendStdErrToFile(redirectStderrTo []string) {
 	redirectFile := strings.TrimSpace(redirectStderrTo[1])
 
 	stdout, stderr := processCmd(redirectCmd)
-	// fmt.Println("Debug: " + stdout + stderr)
+	// fmt.Print("Debug: " + stdout + stderr)
 
 	if stdout != "" {
-		fmt.Println(stdout)
+		fmt.Print(stdout)
 	}
 
 	redirectToFile(stdout, stderr, redirectFile, true, true)
@@ -138,8 +137,8 @@ func redirectAppendStdoutToFile(redirectStdoutTo []string) {
 	// handleRedirectAppendToFile(stdout, redirectFile)
 	redirectToFile(stdout, stderr, redirectFile, true, false)
 
-	if stderr != "" {
-		fmt.Println(stderr)
+	if strings.TrimSpace(stderr) != "" {
+		fmt.Print(stderr)
 	}
 }
 
@@ -148,10 +147,10 @@ func redirectWriteStdErrToFile(redirectStderrTo []string) {
 	redirectFile := strings.TrimSpace(redirectStderrTo[1])
 
 	stdout, stderr := processCmd(redirectCmd)
-	// fmt.Println("Debug: " + stdout + stderr)
+	// fmt.Print("Debug: " + stdout + stderr)
 
 	if stdout != "" {
-		fmt.Println(stdout)
+		fmt.Print(stdout)
 	}
 
 	// handleRedirectWriteToFile(stderr, redirectFile)
@@ -164,8 +163,8 @@ func redirectWriteStdoutToFile(redirectStdoutTo []string) {
 
 	stdout, stderr := processCmd(redirectCmd)
 
-	if stderr != "" {
-		fmt.Println(stderr)
+	if strings.TrimSpace(stderr) != "" {
+		fmt.Print(stderr)
 	}
 	// handleRedirectWriteToFile(stdout, redirectFile)
 	redirectToFile(stdout, stderr, redirectFile, false, false)
@@ -174,7 +173,7 @@ func redirectWriteStdoutToFile(redirectStdoutTo []string) {
 // func handleRedirectWriteToFile(output, redirect string) {
 // 	file, err := os.Create(redirect)
 // 	if err != nil {
-// 		fmt.Println(err.Error())
+// 		fmt.Print(err.Error())
 // 		return
 // 	}
 // 	defer file.Close()
@@ -184,7 +183,7 @@ func redirectWriteStdoutToFile(redirectStdoutTo []string) {
 // func handleRedirectAppendToFile(output, redirect string) {
 // 	file, err := os.OpenFile(redirect, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 // 	if err != nil {
-// 		fmt.Println(err.Error())
+// 		fmt.Print(err.Error())
 // 		return
 // 	}
 // 	defer file.Close()
@@ -222,7 +221,7 @@ func processCmd(command string) (string, string) {
 			return stdout, stderr
 		}
 
-		return "", command + ": command not found"
+		return "", command + ": command not found\n"
 	}
 }
 
@@ -237,7 +236,6 @@ func runCommand(found string, args []string) (string, string, error) {
 
 	err := run.Run()
 
-	return strings.TrimRight(stdout.String(), "\n"),
-		strings.TrimRight(stderr.String(), "\n"),
-		err
+	return stdout.String(), stderr.String(), err
 }
+

@@ -22,7 +22,7 @@ func cdRelativeDir(dir string) string {
 		return err.Error()
 	}
 	if exists := utils.IsDirExists(pwd + "/" + dir); !exists {
-		return "cd: /" + dir + ": No such file or directory"
+		return "cd: /" + dir + ": No such file or directory" + "\n"
 	}
 	os.Chdir(dir)
 	return ""
@@ -30,7 +30,7 @@ func cdRelativeDir(dir string) string {
 
 func cdAbsoluteDir(dir string) string {
 	if exists := utils.IsDirExists(dir); !exists {
-		return "cd: " + dir + ": No such file or directory"
+		return "cd: " + dir + ": No such file or directory" + "\n"
 	}
 	os.Chdir(dir)
 	return ""
