@@ -164,7 +164,7 @@ func handleRedirectAppendToFile(output, redirect string) {
 	}
 	defer file.Close()
 
-	_, _ = file.WriteString(output)
+	_, _ = file.WriteString(output + "\n")
 }
 
 func processCmd(command string) (string, string) {
