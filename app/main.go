@@ -92,6 +92,29 @@ func main() {
 	}
 }
 
+func redirectToFile(stdout, stderr, file string, append bool, isStdErr bool) {
+	f, err := openFile(file, append)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+
+	if isStdErr {
+		_, _ = f.WriteString(stderr)
+		return
+	}
+
+	_, _ = f.WriteString(stdout + "\n")
+}
+
+func openFile(name string, append bool) (*os.File, error) {
+	if append {
+		return os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	}
+	return os.Create(name)
+}
+
 func redirectAppendStdErrToFile(redirectStderrTo []string) {
 	redirectCmd := strings.TrimSpace(redirectStderrTo[0])
 	redirectFile := strings.TrimSpace(redirectStderrTo[1])
@@ -103,7 +126,7 @@ func redirectAppendStdErrToFile(redirectStderrTo []string) {
 		fmt.Println(stdout)
 	}
 
-	handleRedirectAppendToFile(stderr, redirectFile)
+	redirectToFile(stdout, stderr, redirectFile, true, true)
 }
 
 func redirectAppendStdoutToFile(redirectStdoutTo []string) {
@@ -112,7 +135,8 @@ func redirectAppendStdoutToFile(redirectStdoutTo []string) {
 
 	stdout, stderr := processCmd(redirectCmd)
 
-	handleRedirectAppendToFile(stdout, redirectFile)
+	// handleRedirectAppendToFile(stdout, redirectFile)
+	redirectToFile(stdout, stderr, redirectFile, true, false)
 
 	if stderr != "" {
 		fmt.Println(stderr)
@@ -130,7 +154,8 @@ func redirectWriteStdErrToFile(redirectStderrTo []string) {
 		fmt.Println(stdout)
 	}
 
-	handleRedirectWriteToFile(stderr, redirectFile)
+	// handleRedirectWriteToFile(stderr, redirectFile)
+	redirectToFile(stdout, stderr, redirectFile, false, true)
 }
 
 func redirectWriteStdoutToFile(redirectStdoutTo []string) {
@@ -139,33 +164,33 @@ func redirectWriteStdoutToFile(redirectStdoutTo []string) {
 
 	stdout, stderr := processCmd(redirectCmd)
 
-	handleRedirectWriteToFile(stdout, redirectFile)
-
 	if stderr != "" {
 		fmt.Println(stderr)
 	}
+	// handleRedirectWriteToFile(stdout, redirectFile)
+	redirectToFile(stdout, stderr, redirectFile, false, false)
 }
 
-func handleRedirectWriteToFile(output, redirect string) {
-	file, err := os.Create(redirect)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	defer file.Close()
-	_, _ = file.WriteString(output)
-}
+// func handleRedirectWriteToFile(output, redirect string) {
+// 	file, err := os.Create(redirect)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 		return
+// 	}
+// 	defer file.Close()
+// 	_, _ = file.WriteString(output)
+// }
 
-func handleRedirectAppendToFile(output, redirect string) {
-	file, err := os.OpenFile(redirect, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	defer file.Close()
-
-	_, _ = file.WriteString(output + "\n")
-}
+// func handleRedirectAppendToFile(output, redirect string) {
+// 	file, err := os.OpenFile(redirect, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 		return
+// 	}
+// 	defer file.Close()
+//
+// 	_, _ = file.WriteString(output)
+// }
 
 func processCmd(command string) (string, string) {
 	fields, _ := shlex.Split(command)
@@ -200,6 +225,7 @@ func processCmd(command string) (string, string) {
 		return "", command + ": command not found"
 	}
 }
+
 func runCommand(found string, args []string) (string, string, error) {
 	run := exec.Command(found, args...)
 
