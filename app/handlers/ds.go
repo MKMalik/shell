@@ -1,9 +1,9 @@
 package handlers
 
-var Builtins = map[Builtin]func(string){
+var Builtins = map[Builtin]func(string) string{
 	Echo: HandleEcho,
 	Type: HandleType,
-	Exit: func(s string) {},
+	Exit: func(s string) string { return "" },
 	Pwd:  HandlePwd,
 	Cd:   HandleCd,
 }

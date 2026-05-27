@@ -1,15 +1,13 @@
 package handlers
 
 import (
-	"fmt"
 	"os"
 )
 
-func HandlePwd(cmd string) {
+func HandlePwd(cmd string) string {
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err.Error()
 	}
-	fmt.Println(dir)
+	return dir
 }

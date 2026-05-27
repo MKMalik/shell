@@ -1,17 +1,16 @@
 package handlers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/google/shlex"
 )
 
-func HandleEcho(command string) {
+func HandleEcho(command string) string {
 	fields, _ := shlex.Split(command)
 	if len(fields) == 0 {
-		return
+		return ""
 	}
 	args := fields[1:]
-	fmt.Println(strings.Join(args, " "))
+	return strings.Join(args, " ")
 }

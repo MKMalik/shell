@@ -28,27 +28,49 @@ func main() {
 		if cmd == "exit" {
 			break
 		}
-		processCmd(cmd)
+		// check if cmd contains redirect stdout then redirect without printing
+		redirectTo := strings.Split(cmd, "1>")
+		if len(redirectTo) < 2 {
+			redirectTo = strings.Split(cmd, ">")
+		}
+		if len(redirectTo) > 1 {
+			redirectCmd := redirectTo[0]
+			redirect := redirectTo[1]
+			output := processCmd(redirectCmd)
+			handleRedirect(strings.TrimSpace(output), strings.TrimSpace(redirect))
+			continue
+		}
+		output := processCmd(cmd)
+		fmt.Println(output)
 	}
 }
 
-func processCmd(command string) {
+func handleRedirect(output, redirect string) {
+	file, err := os.Create(redirect)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	file.WriteString(output)
+	// fmt.Println(output)
+	// fmt.Println(redirect)
+}
+
+func processCmd(command string) string {
 	fields, _ := shlex.Split(command)
 	if len(fields) == 0 {
-		return
+		return ""
 	}
 	args := fields[1:]
 	switch fields[0] {
 	case string(handlers.Echo):
-		handlers.Builtins[handlers.Echo](command)
-		return
+		return handlers.Builtins[handlers.Echo](command)
 	case string(handlers.Type):
-		handlers.Builtins[handlers.Type](command)
-		return
+		return handlers.Builtins[handlers.Type](command)
 	case string(handlers.Pwd):
-		handlers.Builtins[handlers.Pwd](command)
+		return handlers.Builtins[handlers.Pwd](command)
 	case string(handlers.Cd):
-		handlers.Builtins[handlers.Cd](args[0])
+		return handlers.Builtins[handlers.Cd](args[0])
 	default:
 		// check if exists in PATH as executable
 		found, _ := utils.ScanPath(os.Getenv("PATH"), fields[0])
@@ -58,16 +80,16 @@ func processCmd(command string) {
 
 			stdout, err := run.StdoutPipe()
 			if err != nil {
-				return
+				return ""
 			}
 
 			stderr, err := run.StderrPipe()
 			if err != nil {
-				return
+				return ""
 			}
 
 			if err := run.Start(); err != nil {
-				return
+				return ""
 			}
 
 			stdoutBytes, _ := io.ReadAll(stdout)
@@ -77,12 +99,11 @@ func processCmd(command string) {
 				fmt.Println(err)
 			}
 
-			fmt.Print(string(stdoutBytes))
-			fmt.Print(string(stderrBytes))
-			return
+			// fmt.Print(string(stdoutBytes))
+			// fmt.Print(string(stderrBytes))
+			return string(stdoutBytes) + string(stderrBytes)
 		}
 		// if not: print command not found
-		fmt.Println(command + ": command not found")
-		return
+		return command + ": command not found"
 	}
 }
