@@ -19,7 +19,7 @@ func main() {
 	}
 	scanner := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("$ ")
+		fmt.Print("$")
 		cmd, err := scanner.ReadString('\n')
 		if err != nil {
 			panic(err)
