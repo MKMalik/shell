@@ -37,7 +37,7 @@ func main() {
 			redirectCmd := redirectTo[0]
 			redirect := redirectTo[1]
 			output := processCmd(redirectCmd)
-			handleRedirect(strings.TrimSpace(output), strings.TrimSpace(redirect))
+			handleRedirectToFile(strings.TrimSpace(output), strings.TrimSpace(redirect))
 			continue
 		}
 		output := processCmd(cmd)
@@ -45,15 +45,13 @@ func main() {
 	}
 }
 
-func handleRedirect(output, redirect string) {
+func handleRedirectToFile(output, redirect string) {
 	file, err := os.Create(redirect)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 	file.WriteString(output)
-	// fmt.Println(output)
-	// fmt.Println(redirect)
 }
 
 func processCmd(command string) string {
@@ -95,7 +93,10 @@ func runCommand(found string, args []string) (string, error) {
 
 	err := run.Run()
 
-	output := stdout.String() + stderr.String()
+	output := strings.TrimRight(
+		stdout.String()+stderr.String(),
+		"\n",
+	)
 
 	return output, err
 }
