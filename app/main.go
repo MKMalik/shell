@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -76,34 +76,26 @@ func processCmd(command string) string {
 		found, _ := utils.ScanPath(os.Getenv("PATH"), fields[0])
 		// if exists and executable then execute passing args if any
 		if found != nil {
-			run := exec.Command(*found, args...)
-
-			stdout, err := run.StdoutPipe()
-			if err != nil {
-				return ""
-			}
-
-			stderr, err := run.StderrPipe()
-			if err != nil {
-				return ""
-			}
-
-			if err := run.Start(); err != nil {
-				return ""
-			}
-
-			stdoutBytes, _ := io.ReadAll(stdout)
-			stderrBytes, _ := io.ReadAll(stderr)
-
-			if err := run.Wait(); err != nil {
-				fmt.Println(err)
-			}
-
-			// fmt.Print(string(stdoutBytes))
-			// fmt.Print(string(stderrBytes))
-			return string(stdoutBytes) + string(stderrBytes)
+			output, _ := runCommand(*found, args)
+			return output
 		}
 		// if not: print command not found
 		return command + ": command not found"
 	}
+}
+
+func runCommand(found string, args []string) (string, error) {
+	run := exec.Command(found, args...)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	run.Stdout = &stdout
+	run.Stderr = &stderr
+
+	err := run.Run()
+
+	output := stdout.String() + stderr.String()
+
+	return output, err
 }
