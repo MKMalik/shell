@@ -48,12 +48,12 @@ func main() {
 			redirectCmd := strings.TrimSpace(redirectStderrTo[0])
 			redirectFile := strings.TrimSpace(redirectStderrTo[1])
 
-			_, stderr := processCmd(redirectCmd)
+			stdout, stderr := processCmd(redirectCmd)
 			// fmt.Println("Debug: " + stdout + stderr)
 
-			// if stdout != "" {
-			// 	fmt.Println(stdout)
-			// }
+			if stdout != "" {
+				fmt.Println(stdout)
+			}
 
 			handleRedirectToFile(stderr, redirectFile)
 
