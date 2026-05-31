@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"os"
+	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 )
 
-func HandleCd(dir string) string {
+func HandleCd(cmd string) string {
+	dir := strings.Split(cmd, " ")[1]
 	if dir == "~" {
 		return cdHomeDir()
 	} else if string(dir[0]) == "/" {

@@ -92,7 +92,6 @@ func main() {
 }
 
 func processCmd(command string) (string, string) {
-
 	fields, _ := shlex.Split(command)
 
 	if len(fields) == 0 {
@@ -100,23 +99,13 @@ func processCmd(command string) (string, string) {
 	}
 
 	args := fields[1:]
+	cmd := handlers.Builtin(fields[0])
 
-	switch fields[0] {
-	case string(handlers.Echo):
-		return handlers.Builtins[handlers.Echo](command), ""
-
-	case string(handlers.Type):
-		return handlers.Builtins[handlers.Type](command), ""
-
-	case string(handlers.Pwd):
-		return handlers.Builtins[handlers.Pwd](command), ""
-
-	case string(handlers.Cd):
-		return handlers.Builtins[handlers.Cd](args[0]), ""
-
-	default:
-		return HandleExternal(fields[0], args)
+	if fn, ok := handlers.Builtins[cmd]; ok {
+		return fn(command), ""
 	}
+
+	return HandleExternal(fields[0], args)
 }
 
 func HandleExternal(command string, args []string) (string, string) {
