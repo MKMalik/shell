@@ -157,7 +157,7 @@ func HandleFileAutocomplete(input []byte) []byte {
 		completed := matches[0]
 
 		if info, err := os.Stat(completed); err == nil && info.IsDir() {
-			completed += "/"
+			completed += "/ "
 		} else {
 			completed += " "
 		}
@@ -194,7 +194,10 @@ func FindFiles(prefix string) []string {
 	dir := "."
 	base := prefix
 
-	if strings.Contains(prefix, "/") {
+	if strings.HasSuffix(prefix, "/") {
+		dir = prefix
+		base = ""
+	} else if strings.Contains(prefix, "/") {
 		dir = filepath.Dir(prefix)
 		base = filepath.Base(prefix)
 	}
