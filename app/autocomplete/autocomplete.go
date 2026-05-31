@@ -8,15 +8,33 @@ import (
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 )
 
+var first bool = true
+
 func HandleAutocomplete(input []byte) []byte {
+	seen := make(map[string]struct{})
 	var matches []string
+
 	for val := range handlers.Builtins {
-		if strings.HasPrefix(string(val), string(input)) {
-			matches = append(matches, string(val))
+		name := string(val)
+
+		if !strings.HasPrefix(name, string(input)) {
+			continue
 		}
+
+		seen[name] = struct{}{}
+		matches = append(matches, name)
 	}
 
-	matches = append(matches, FindExecutables(string(input))...)
+	for _, name := range FindExecutables(string(input)) {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+
+		seen[name] = struct{}{}
+		matches = append(matches, name)
+	}
+
+	sort.Strings(matches)
 
 	switch len(matches) {
 	case 0:
@@ -27,9 +45,21 @@ func HandleAutocomplete(input []byte) []byte {
 		os.Stdout.WriteString(string(matches[0] + " "))
 		return []byte(matches[0] + " ")
 	default:
-		os.Stdout.WriteString("\r\033[2K$ ")
-		os.Stdout.WriteString(matches[0] + " ")
-		return []byte(matches[0] + " ")
+		if first {
+			first = false
+			os.Stdout.WriteString("\a")
+			return input
+		}
+
+		first = true
+
+		os.Stdout.WriteString("\r\n")
+		os.Stdout.WriteString(strings.Join(matches, "  "))
+		os.Stdout.WriteString("\r\n")
+		os.Stdout.WriteString("$ ")
+		os.Stdout.WriteString(string(input))
+
+		return input
 	}
 }
 
