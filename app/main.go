@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,100 +9,115 @@ import (
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 	"github.com/google/shlex"
+	"golang.org/x/term"
 )
 
 func main() {
-	for i := range handlers.Builtins {
-		handlers.BuiltinNames[i] = struct{}{}
-	}
-	scanner := bufio.NewReader(os.Stdin)
+	oldState, _ := term.MakeRaw(int(os.Stdin.Fd()))
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	buf := make([]byte, 1)
+
 	for {
-		fmt.Print("$ ")
+		os.Stdout.Write([]byte("\r\033[2K$ "))
 
-		cmd, err := scanner.ReadString('\n')
-		if err != nil {
-			panic(err)
+		var input []byte
+
+		for {
+			os.Stdin.Read(buf)
+
+			if buf[0] == 13 || buf[0] == 10 {
+				os.Stdout.Write([]byte("\r\n"))
+				break
+			}
+
+			if buf[0] == 9 {
+				input = handleTab(input)
+				continue
+			}
+
+			if buf[0] == 127 || buf[0] == 8 {
+				if len(input) > 0 {
+					input = input[:len(input)-1]
+					os.Stdout.Write([]byte("\b \b"))
+				}
+				continue
+			}
+
+			input = append(input, buf[0])
+			os.Stdout.Write(buf)
 		}
 
-		cmd = strings.TrimSpace(cmd)
+		cmd := string(input)
 
-		if cmd == "exit" {
-			break
+		if strings.TrimSpace(cmd) == "exit" {
+			return
 		}
+		redirect := parseRedirect(cmd)
 
-		// check if redirect >> append to file
-		redirectAppendStdoutTo := strings.Split(cmd, "1>>")
-		redirectAppendStderrTo := strings.Split(cmd, "2>>")
+		if redirect.Valid {
+			// fmt.Printf("CMD=[%s]\n", redirect.Cmd)
+			stdout, stderr := processCmd(redirect.Cmd)
 
-		redirectingAppendStdout := len(redirectAppendStdoutTo) > 1
-		redirectingAppendStderr := len(redirectAppendStderrTo) > 1
+			if redirect.FD == 1 {
+				_ = redirectToFile(stdout, redirect.File, redirect.Append)
 
-		if !redirectingAppendStdout {
-			redirectAppendStdoutTo = strings.Split(cmd, ">>")
-			redirectingAppendStdout = len(redirectAppendStdoutTo) > 1
-		}
+				if stderr != "" {
+					writeOutput(stderr)
+				}
+			} else {
+				_ = redirectToFile(stderr, redirect.File, redirect.Append)
 
-		// stderr redirect
-		if redirectingAppendStderr {
-			redirectAppendStdErrToFile(redirectAppendStderrTo)
-			continue
-		}
-
-		// stdout redirect
-		if redirectingAppendStdout {
-			redirectAppendStdoutToFile(redirectAppendStdoutTo)
-			continue
-		}
-
-		// check if redirect > write to file
-		redirectWriteStdoutTo := strings.Split(cmd, "1>")
-		redirectWriteStderrTo := strings.Split(cmd, "2>")
-
-		redirectingWriteStdout := len(redirectWriteStdoutTo) > 1
-		redirectingWriteStderr := len(redirectWriteStderrTo) > 1
-
-		if !redirectingWriteStdout {
-			redirectWriteStdoutTo = strings.Split(cmd, ">")
-			redirectingWriteStdout = len(redirectWriteStdoutTo) > 1
-		}
-
-		// stderr redirect
-		if redirectingWriteStderr {
-			redirectWriteStdErrToFile(redirectWriteStderrTo)
-			continue
-		}
-
-		// stdout redirect
-		if redirectingWriteStdout {
-			redirectWriteStdoutToFile(redirectWriteStdoutTo)
+				if stdout != "" {
+					writeOutput(stdout)
+				}
+			}
 			continue
 		}
 
 		stdout, stderr := processCmd(cmd)
-
 		if stdout != "" {
-			fmt.Print(stdout)
-		}
-		if stderr != "" && strings.TrimSpace(stderr) != "" {
-			fmt.Print(stderr)
+			writeOutput(stdout)
+		} else {
+			writeOutput(stderr)
 		}
 	}
 }
 
-func redirectToFile(stdout, stderr, file string, append bool, isStdErr bool) {
+func handleTab(input []byte) []byte {
+	for val := range handlers.Builtins {
+		if strings.HasPrefix(string(val), string(input)) {
+			os.Stdout.WriteString("\r\033[2K$ ")
+			os.Stdout.WriteString(string(val + " "))
+			return []byte(val + " ")
+		}
+	}
+	return input
+}
+
+func writeOutput(output string) {
+	output = strings.TrimRight(output, "\n")
+
+	if output == "" {
+		return
+	}
+
+	for _, line := range strings.Split(output, "\n") {
+		os.Stdout.WriteString("\r")
+		os.Stdout.WriteString(line)
+		os.Stdout.WriteString("\r\n")
+	}
+}
+
+func redirectToFile(content, file string, append bool) error {
 	f, err := openFile(file, append)
 	if err != nil {
-		fmt.Print(err)
-		return
+		return err
 	}
 	defer f.Close()
 
-	if isStdErr {
-		_, _ = f.WriteString(stderr)
-		return
-	}
-
-	_, _ = f.WriteString(stdout)
+	_, err = f.WriteString(content)
+	return err
 }
 
 func openFile(name string, append bool) (*os.File, error) {
@@ -114,84 +127,8 @@ func openFile(name string, append bool) (*os.File, error) {
 	return os.Create(name)
 }
 
-func redirectAppendStdErrToFile(redirectStderrTo []string) {
-	redirectCmd := strings.TrimSpace(redirectStderrTo[0])
-	redirectFile := strings.TrimSpace(redirectStderrTo[1])
-
-	stdout, stderr := processCmd(redirectCmd)
-	// fmt.Print("Debug: " + stdout + stderr)
-
-	if stdout != "" {
-		fmt.Print(stdout)
-	}
-
-	redirectToFile(stdout, stderr, redirectFile, true, true)
-}
-
-func redirectAppendStdoutToFile(redirectStdoutTo []string) {
-	redirectCmd := strings.TrimSpace(redirectStdoutTo[0])
-	redirectFile := strings.TrimSpace(redirectStdoutTo[1])
-
-	stdout, stderr := processCmd(redirectCmd)
-
-	// handleRedirectAppendToFile(stdout, redirectFile)
-	redirectToFile(stdout, stderr, redirectFile, true, false)
-
-	if strings.TrimSpace(stderr) != "" {
-		fmt.Print(stderr)
-	}
-}
-
-func redirectWriteStdErrToFile(redirectStderrTo []string) {
-	redirectCmd := strings.TrimSpace(redirectStderrTo[0])
-	redirectFile := strings.TrimSpace(redirectStderrTo[1])
-
-	stdout, stderr := processCmd(redirectCmd)
-	// fmt.Print("Debug: " + stdout + stderr)
-
-	if stdout != "" {
-		fmt.Print(stdout)
-	}
-
-	// handleRedirectWriteToFile(stderr, redirectFile)
-	redirectToFile(stdout, stderr, redirectFile, false, true)
-}
-
-func redirectWriteStdoutToFile(redirectStdoutTo []string) {
-	redirectCmd := strings.TrimSpace(redirectStdoutTo[0])
-	redirectFile := strings.TrimSpace(redirectStdoutTo[1])
-
-	stdout, stderr := processCmd(redirectCmd)
-
-	if strings.TrimSpace(stderr) != "" {
-		fmt.Print(stderr)
-	}
-	// handleRedirectWriteToFile(stdout, redirectFile)
-	redirectToFile(stdout, stderr, redirectFile, false, false)
-}
-
-// func handleRedirectWriteToFile(output, redirect string) {
-// 	file, err := os.Create(redirect)
-// 	if err != nil {
-// 		fmt.Print(err.Error())
-// 		return
-// 	}
-// 	defer file.Close()
-// 	_, _ = file.WriteString(output)
-// }
-
-// func handleRedirectAppendToFile(output, redirect string) {
-// 	file, err := os.OpenFile(redirect, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-// 	if err != nil {
-// 		fmt.Print(err.Error())
-// 		return
-// 	}
-// 	defer file.Close()
-//
-// 	_, _ = file.WriteString(output)
-// }
-
 func processCmd(command string) (string, string) {
+
 	fields, _ := shlex.Split(command)
 
 	if len(fields) == 0 {
@@ -239,3 +176,46 @@ func runCommand(found string, args []string) (string, string, error) {
 	return stdout.String(), stderr.String(), err
 }
 
+type Redirect struct {
+	Cmd    string
+	File   string
+	FD     int // 1=stdout, 2=stderr
+	Append bool
+	Valid  bool
+}
+
+func parseRedirect(cmd string) Redirect {
+	ops := []struct {
+		token  string
+		fd     int
+		append bool
+	}{
+		{"2>>", 2, true},
+		{"1>>", 1, true},
+		{">>", 1, true},
+		{"2>", 2, false},
+		{"1>", 1, false},
+		{">", 1, false},
+	}
+
+	for _, op := range ops {
+		parts := strings.SplitN(cmd, op.token, 2)
+
+		if len(parts) != 2 {
+			continue
+		}
+
+		return Redirect{
+			Cmd:    strings.TrimSpace(parts[0]),
+			File:   strings.TrimSpace(parts[1]),
+			FD:     op.fd,
+			Append: op.append,
+			Valid:  true,
+		}
+	}
+
+	return Redirect{
+		Cmd:   cmd,
+		Valid: false,
+	}
+}

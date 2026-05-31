@@ -15,6 +15,12 @@ func IsBuiltin(cmd string) bool {
 	return ok
 }
 
+func init() {
+	for builtin := range Builtins {
+		BuiltinNames[builtin] = struct{}{}
+	}
+}
+
 type Builtin string
 
 const (
