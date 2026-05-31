@@ -39,7 +39,6 @@ func main() {
 				} else {
 					input = autocomplete.HandleCommandAutocomplete(input)
 				}
-
 				continue
 			}
 

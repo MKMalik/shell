@@ -139,14 +139,14 @@ func LongestCommonPrefix(matches []string) string {
 func HandleFileAutocomplete(input []byte) []byte {
 	line := string(input)
 
-	fields := strings.Fields(line)
-	if len(fields) < 1 {
+	fields := strings.Split(line, " ")
+	if len(fields) < 2 {
 		return input
 	}
 
 	prefix := fields[len(fields)-1]
 
-	matches := FindFiles(prefix)
+	matches := FindFilesAndDirs(prefix)
 
 	switch len(matches) {
 	case 0:
@@ -157,7 +157,7 @@ func HandleFileAutocomplete(input []byte) []byte {
 		completed := matches[0]
 
 		if info, err := os.Stat(completed); err == nil && info.IsDir() {
-			completed += "/ "
+			completed += "/"
 		} else {
 			completed += " "
 		}
@@ -190,12 +190,12 @@ func HandleFileAutocomplete(input []byte) []byte {
 	}
 }
 
-func FindFiles(prefix string) []string {
+func FindFilesAndDirs(prefix string) []string {
 	dir := "."
 	base := prefix
 
 	if strings.HasSuffix(prefix, "/") {
-		dir = prefix
+		dir = strings.TrimSuffix(prefix, "/")
 		base = ""
 	} else if strings.Contains(prefix, "/") {
 		dir = filepath.Dir(prefix)
