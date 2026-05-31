@@ -156,7 +156,8 @@ func HandleFileAutocomplete(input []byte) []byte {
 	case 1:
 		completed := matches[0]
 
-		if info, err := os.Stat(completed); err == nil && info.IsDir() {
+		info, err := os.Stat(completed)
+		if err == nil && info.IsDir() {
 			completed += "/"
 		} else {
 			completed += " "
@@ -185,7 +186,23 @@ func HandleFileAutocomplete(input []byte) []byte {
 			return []byte(newInput)
 		}
 
-		os.Stdout.WriteString("\a")
+		if first {
+			first = false
+			os.Stdout.WriteString("\a")
+			return input
+		}
+		first = true
+
+		os.Stdout.WriteString("\r\n")
+		display := make([]string, 0, len(matches))
+		for _, m := range matches {
+			display = append(display, DisplayName(m))
+		}
+		os.Stdout.WriteString(strings.Join(display, "  "))
+		os.Stdout.WriteString("\r\n")
+		os.Stdout.WriteString("$ ")
+		os.Stdout.WriteString(string(input))
+
 		return input
 	}
 }
@@ -194,8 +211,8 @@ func FindFilesAndDirs(prefix string) []string {
 	dir := "."
 	base := prefix
 
-	if strings.HasSuffix(prefix, "/") {
-		dir = strings.TrimSuffix(prefix, "/")
+	if before, ok := strings.CutSuffix(prefix, "/"); ok {
+		dir = before
 		base = ""
 	} else if strings.Contains(prefix, "/") {
 		dir = filepath.Dir(prefix)
@@ -214,15 +231,24 @@ func FindFilesAndDirs(prefix string) []string {
 			continue
 		}
 
-		name := entry.Name()
+		full := filepath.Join(dir, entry.Name())
 
-		if dir != "." {
-			name = filepath.Join(dir, name)
-		}
-
-		matches = append(matches, name)
+		matches = append(matches, full)
 	}
 
 	sort.Strings(matches)
 	return matches
+}
+
+func DisplayName(path string) string {
+	info, err := os.Stat(path)
+	if err != nil {
+		return filepath.Base(path)
+	}
+
+	if info.IsDir() {
+		return filepath.Base(path) + "/"
+	}
+
+	return filepath.Base(path)
 }
