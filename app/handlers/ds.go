@@ -1,11 +1,12 @@
 package handlers
 
 var Builtins = map[Builtin]func(string) string{
-	Echo: HandleEcho,
-	Type: HandleType,
-	Exit: func(s string) string { return "" },
-	Pwd:  HandlePwd,
-	Cd:   HandleCd,
+	Echo:     HandleEcho,
+	Type:     HandleType,
+	Exit:     func(s string) string { return "" },
+	Pwd:      HandlePwd,
+	Cd:       HandleCd,
+	Complete: HandleComplete,
 }
 
 var BuiltinNames = map[Builtin]struct{}{}
@@ -24,9 +25,10 @@ func init() {
 type Builtin string
 
 const (
-	Exit Builtin = "exit"
-	Echo Builtin = "echo"
-	Type Builtin = "type"
-	Pwd  Builtin = "pwd"
-	Cd   Builtin = "cd"
+	Exit     Builtin = "exit"
+	Echo     Builtin = "echo"
+	Type     Builtin = "type"
+	Pwd      Builtin = "pwd"
+	Cd       Builtin = "cd"
+	Complete Builtin = "complete"
 )
