@@ -92,6 +92,7 @@ func handleTab(input []byte) []byte {
 			return []byte(val + " ")
 		}
 	}
+	os.Stdout.WriteString("\x07")
 	return input
 }
 
