@@ -2,6 +2,7 @@ package autocomplete
 
 import (
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 
 var first bool = true
 
-func HandleAutocomplete(input []byte) []byte {
+func HandleCommandAutocomplete(input []byte) []byte {
 	seen := make(map[string]struct{})
 	var matches []string
 
@@ -133,4 +134,92 @@ func LongestCommonPrefix(matches []string) string {
 	}
 
 	return prefix
+}
+
+func HandleFileAutocomplete(input []byte) []byte {
+	line := string(input)
+
+	fields := strings.Fields(line)
+	if len(fields) < 1 {
+		return input
+	}
+
+	prefix := fields[len(fields)-1]
+
+	matches := FindFiles(prefix)
+
+	switch len(matches) {
+	case 0:
+		os.Stdout.WriteString("\a")
+		return input
+
+	case 1:
+		completed := matches[0]
+
+		if info, err := os.Stat(completed); err == nil && info.IsDir() {
+			completed += "/"
+		} else {
+			completed += " "
+		}
+
+		fields[len(fields)-1] = completed
+
+		newInput := strings.Join(fields, " ")
+
+		os.Stdout.WriteString("\r\033[2K$ ")
+		os.Stdout.WriteString(newInput)
+
+		return []byte(newInput)
+
+	default:
+		lcp := LongestCommonPrefix(matches)
+
+		if len(lcp) > len(prefix) {
+			fields[len(fields)-1] = lcp
+
+			newInput := strings.Join(fields, " ")
+
+			os.Stdout.WriteString("\r\033[2K$ ")
+			os.Stdout.WriteString(newInput)
+
+			return []byte(newInput)
+		}
+
+		os.Stdout.WriteString("\a")
+		return input
+	}
+}
+
+func FindFiles(prefix string) []string {
+	dir := "."
+	base := prefix
+
+	if strings.Contains(prefix, "/") {
+		dir = filepath.Dir(prefix)
+		base = filepath.Base(prefix)
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+
+	var matches []string
+
+	for _, entry := range entries {
+		if !strings.HasPrefix(entry.Name(), base) {
+			continue
+		}
+
+		name := entry.Name()
+
+		if dir != "." {
+			name = filepath.Join(dir, name)
+		}
+
+		matches = append(matches, name)
+	}
+
+	sort.Strings(matches)
+	return matches
 }

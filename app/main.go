@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/autocomplete"
-	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/commands"
+	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 	"github.com/google/shlex"
 	"golang.org/x/term"
@@ -32,7 +32,14 @@ func main() {
 			}
 
 			if buf[0] == 9 {
-				input = autocomplete.HandleAutocomplete(input)
+				s := string(input)
+
+				if strings.ContainsRune(s, ' ') {
+					input = autocomplete.HandleFileAutocomplete(input)
+				} else {
+					input = autocomplete.HandleCommandAutocomplete(input)
+				}
+
 				continue
 			}
 
@@ -60,14 +67,14 @@ func main() {
 			stdout, stderr := processCmd(redirect.Cmd)
 
 			if redirect.FD == 1 {
-				_ = redirectToFile(stdout, redirect.File, redirect.Append)
+				_ = utils.RedirectToFile(stdout, redirect.File, redirect.Append)
 
 				if stderr != "" {
 					utils.WriteOutput(stderr)
 				}
 			} else {
 				// FD == 2
-				_ = redirectToFile(stderr, redirect.File, redirect.Append)
+				_ = utils.RedirectToFile(stderr, redirect.File, redirect.Append)
 
 				if stdout != "" {
 					utils.WriteOutput(stdout)
@@ -83,24 +90,6 @@ func main() {
 			utils.WriteOutput(stderr)
 		}
 	}
-}
-
-func redirectToFile(content, file string, append bool) error {
-	f, err := openFile(file, append)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	_, err = f.WriteString(content)
-	return err
-}
-
-func openFile(name string, append bool) (*os.File, error) {
-	if append {
-		return os.OpenFile(name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	}
-	return os.Create(name)
 }
 
 func processCmd(command string) (string, string) {
@@ -127,13 +116,17 @@ func processCmd(command string) (string, string) {
 		return handlers.Builtins[handlers.Cd](args[0]), ""
 
 	default:
-		found, _ := utils.ScanPath(os.Getenv("PATH"), fields[0])
-
-		if found != nil {
-			stdout, stderr, _ := commands.RunCommand(*found, args)
-			return stdout, stderr
-		}
-
-		return "", command + ": command not found\n"
+		return HandleExternal(fields[0], args)
 	}
+}
+
+func HandleExternal(command string, args []string) (string, string) {
+	found, _ := utils.ScanPath(os.Getenv("PATH"), command)
+
+	if found != nil {
+		stdout, stderr, _ := commands.RunCommand(*found, args)
+		return stdout, stderr
+	}
+
+	return "", command + ": command not found\n"
 }
