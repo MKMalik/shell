@@ -42,15 +42,25 @@ func HandleAutocomplete(input []byte) []byte {
 		return input
 	case 1:
 		os.Stdout.WriteString("\r\033[2K$ ")
-		os.Stdout.WriteString(string(matches[0] + " "))
+		os.Stdout.WriteString(matches[0])
+		os.Stdout.WriteString(" ")
 		return []byte(matches[0] + " ")
 	default:
+		lcp := LongestCommonPrefix(matches)
+
+		if len(lcp) > len(input) {
+			suffix := lcp[len(input):]
+
+			os.Stdout.WriteString(suffix)
+
+			return []byte(lcp)
+		}
+
 		if first {
 			first = false
 			os.Stdout.WriteString("\a")
 			return input
 		}
-
 		first = true
 
 		os.Stdout.WriteString("\r\n")
@@ -104,4 +114,23 @@ func FindExecutables(prefix string) []string {
 
 	sort.Strings(matches)
 	return matches
+}
+
+func LongestCommonPrefix(matches []string) string {
+	if len(matches) == 0 {
+		return ""
+	}
+
+	prefix := matches[0]
+
+	for _, s := range matches[1:] {
+		for !strings.HasPrefix(s, prefix) {
+			if len(prefix) == 0 {
+				return ""
+			}
+			prefix = prefix[:len(prefix)-1]
+		}
+	}
+
+	return prefix
 }
