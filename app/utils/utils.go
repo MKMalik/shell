@@ -7,7 +7,7 @@ import (
 )
 
 func ScanPath(paths, arg string) (*string, *string) {
-	for _, dir := range strings.Split(paths, ":") {
+	for dir := range strings.SplitSeq(paths, ":") {
 		full := filepath.Join(dir, arg)
 
 		info, err := os.Stat(full)

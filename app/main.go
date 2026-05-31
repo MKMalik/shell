@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"os"
-	"os/exec"
 	"strings"
 
+	"github.com/codecrafters-io/shell-starter-go/app/autocomplete"
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
+	"github.com/codecrafters-io/shell-starter-go/app/commands"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 	"github.com/google/shlex"
 	"golang.org/x/term"
@@ -32,7 +32,7 @@ func main() {
 			}
 
 			if buf[0] == 9 {
-				input = handleTab(input)
+				input = autocomplete.HandleAutocomplete(input)
 				continue
 			}
 
@@ -53,23 +53,24 @@ func main() {
 		if strings.TrimSpace(cmd) == "exit" {
 			return
 		}
-		redirect := parseRedirect(cmd)
+
+		redirect := utils.ParseRedirect(cmd)
 
 		if redirect.Valid {
-			// fmt.Printf("CMD=[%s]\n", redirect.Cmd)
 			stdout, stderr := processCmd(redirect.Cmd)
 
 			if redirect.FD == 1 {
 				_ = redirectToFile(stdout, redirect.File, redirect.Append)
 
 				if stderr != "" {
-					writeOutput(stderr)
+					utils.WriteOutput(stderr)
 				}
 			} else {
+				// FD == 2
 				_ = redirectToFile(stderr, redirect.File, redirect.Append)
 
 				if stdout != "" {
-					writeOutput(stdout)
+					utils.WriteOutput(stdout)
 				}
 			}
 			continue
@@ -77,36 +78,10 @@ func main() {
 
 		stdout, stderr := processCmd(cmd)
 		if stdout != "" {
-			writeOutput(stdout)
+			utils.WriteOutput(stdout)
 		} else {
-			writeOutput(stderr)
+			utils.WriteOutput(stderr)
 		}
-	}
-}
-
-func handleTab(input []byte) []byte {
-	for val := range handlers.Builtins {
-		if strings.HasPrefix(string(val), string(input)) {
-			os.Stdout.WriteString("\r\033[2K$ ")
-			os.Stdout.WriteString(string(val + " "))
-			return []byte(val + " ")
-		}
-	}
-	os.Stdout.WriteString("\x07")
-	return input
-}
-
-func writeOutput(output string) {
-	output = strings.TrimRight(output, "\n")
-
-	if output == "" {
-		return
-	}
-
-	for _, line := range strings.Split(output, "\n") {
-		os.Stdout.WriteString("\r")
-		os.Stdout.WriteString(line)
-		os.Stdout.WriteString("\r\n")
 	}
 }
 
@@ -155,68 +130,10 @@ func processCmd(command string) (string, string) {
 		found, _ := utils.ScanPath(os.Getenv("PATH"), fields[0])
 
 		if found != nil {
-			stdout, stderr, _ := runCommand(*found, args)
+			stdout, stderr, _ := commands.RunCommand(*found, args)
 			return stdout, stderr
 		}
 
 		return "", command + ": command not found\n"
-	}
-}
-
-func runCommand(found string, args []string) (string, string, error) {
-	run := exec.Command(found, args...)
-
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	run.Stdout = &stdout
-	run.Stderr = &stderr
-
-	err := run.Run()
-
-	return stdout.String(), stderr.String(), err
-}
-
-type Redirect struct {
-	Cmd    string
-	File   string
-	FD     int // 1=stdout, 2=stderr
-	Append bool
-	Valid  bool
-}
-
-func parseRedirect(cmd string) Redirect {
-	ops := []struct {
-		token  string
-		fd     int
-		append bool
-	}{
-		{"2>>", 2, true},
-		{"1>>", 1, true},
-		{">>", 1, true},
-		{"2>", 2, false},
-		{"1>", 1, false},
-		{">", 1, false},
-	}
-
-	for _, op := range ops {
-		parts := strings.SplitN(cmd, op.token, 2)
-
-		if len(parts) != 2 {
-			continue
-		}
-
-		return Redirect{
-			Cmd:    strings.TrimSpace(parts[0]),
-			File:   strings.TrimSpace(parts[1]),
-			FD:     op.fd,
-			Append: op.append,
-			Valid:  true,
-		}
-	}
-
-	return Redirect{
-		Cmd:   cmd,
-		Valid: false,
 	}
 }
