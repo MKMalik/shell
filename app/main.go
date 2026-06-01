@@ -34,6 +34,13 @@ func main() {
 			if buf[0] == 9 {
 				s := string(input)
 
+				if strings.HasSuffix(s, " ") {
+					if out, ok := handlers.RunCompleter(s); ok {
+						input = []byte(out)
+						continue
+					}
+				}
+
 				if strings.ContainsRune(s, ' ') {
 					input = autocomplete.HandleFileAutocomplete(input)
 				} else {

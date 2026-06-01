@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/google/shlex"
@@ -37,4 +39,43 @@ func HandleComplete(cmd string) string {
 	}
 
 	return ""
+}
+
+func GetComplete(cmd string) *string {
+	if path, ok := register[cmd]; ok {
+		return &path
+	}
+	return nil
+}
+
+func RunCompleter(line string) (string, bool) {
+	fields := strings.Fields(line)
+
+	if len(fields) != 1 {
+		return "", false
+	}
+
+	cmd := fields[0]
+
+	path := GetComplete(cmd)
+	if path == nil {
+		return "", false
+	}
+
+	out, err := exec.Command(*path).Output()
+	if err != nil {
+		return "", false
+	}
+
+	candidate := strings.TrimSpace(string(out))
+	if candidate == "" {
+		return "", false
+	}
+
+	newLine := line + candidate + " "
+
+	os.Stdout.WriteString("\r\033[2K$ ")
+	os.Stdout.WriteString(strings.Split(newLine, "\n")[0]) // single line
+
+	return newLine, true
 }
