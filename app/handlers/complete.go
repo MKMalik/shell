@@ -48,18 +48,28 @@ func GetComplete(cmd string) *string {
 	return nil
 }
 
-func RunCompleter(line string) (string, bool) {
+var completerFirst = true
+
+type CompletionResult int
+
+const (
+	NoCompletion CompletionResult = iota
+	Completed
+	Handled
+)
+
+func RunCompleter(line string) (string, CompletionResult) {
 	fields := strings.Fields(line)
 
 	if len(fields) == 0 {
-		return "", false
+		return "", NoCompletion
 	}
 
 	arg0 := fields[0]
 
 	path := GetComplete(arg0)
 	if path == nil {
-		return "", false
+		return "", NoCompletion
 	}
 
 	arg1 := ""
@@ -72,9 +82,9 @@ func RunCompleter(line string) (string, bool) {
 	arg2 = fields[len(fields)-1]
 
 	args := []string{
-		fields[0], // git
-		arg2,      // get
-		arg1,      // remote
+		fields[0], // command
+		arg2,      // current word
+		arg1,      // previous word
 	}
 
 	cmd := exec.Command(*path, args...)
@@ -86,15 +96,37 @@ func RunCompleter(line string) (string, bool) {
 	)
 
 	out, err := cmd.Output()
-
 	if err != nil {
-		return "", false
+		return "", NoCompletion
 	}
 
-	candidate := strings.TrimSpace(string(out))
-	if candidate == "" {
-		return "", false
+	candidates := strings.Fields(string(out))
+
+	if len(candidates) == 0 {
+		return "", NoCompletion
 	}
+
+	if len(candidates) > 1 {
+		if completerFirst {
+			completerFirst = false
+			os.Stdout.WriteString("\a")
+			return line, Handled
+		}
+
+		completerFirst = true
+
+		os.Stdout.WriteString("\r\n")
+		os.Stdout.WriteString(strings.Join(candidates, "  "))
+		os.Stdout.WriteString("\r\n")
+		os.Stdout.WriteString("$ ")
+		os.Stdout.WriteString(line)
+
+		return line, Handled
+	}
+
+	completerFirst = true
+
+	candidate := candidates[0]
 
 	var newLine string
 
@@ -108,5 +140,5 @@ func RunCompleter(line string) (string, bool) {
 	os.Stdout.WriteString("\r\033[2K$ ")
 	os.Stdout.WriteString(newLine)
 
-	return newLine, true
+	return newLine, Completed
 }

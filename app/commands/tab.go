@@ -13,8 +13,16 @@ func HandleTab(input []byte) []byte {
 	fields := strings.Fields(s)
 
 	if len(fields) > 0 && handlers.GetComplete(fields[0]) != nil {
-		if out, ok := handlers.RunCompleter(s); ok {
+		out, result := handlers.RunCompleter(s)
+
+		switch result {
+		case handlers.Completed:
 			return []byte(out)
+
+		case handlers.Handled:
+			return input
+
+		case handlers.NoCompletion:
 		}
 	}
 
