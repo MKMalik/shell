@@ -7,7 +7,6 @@ import (
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 )
 
-
 func ExecuteCommand(cmd string) {
 	if strings.TrimSpace(cmd) == "exit" {
 		os.Exit(0)
@@ -25,4 +24,3 @@ func ExecuteCommand(cmd string) {
 	utils.WriteOutput(stdout)
 	utils.WriteOutput(stderr)
 }
-

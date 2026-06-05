@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os"
+	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
@@ -9,6 +10,11 @@ import (
 )
 
 func ProcessCmd(command string) (string, string) {
+	background := false
+	if strings.HasSuffix(command, " &") {
+		background = true
+		command = strings.Split(command, " &")[0]
+	}
 	fields, _ := shlex.Split(command)
 
 	if len(fields) == 0 {
@@ -22,14 +28,14 @@ func ProcessCmd(command string) (string, string) {
 		return fn(command), ""
 	}
 
-	return HandleExternal(fields[0], args)
+	return HandleExternal(fields[0], args, background)
 }
 
-func HandleExternal(command string, args []string) (string, string) {
+func HandleExternal(command string, args []string, background bool) (string, string) {
 	found, _ := utils.ScanPath(os.Getenv("PATH"), command)
 
 	if found != nil {
-		stdout, stderr, _ := RunCommand(*found, args)
+		stdout, stderr, _ := RunCommand(*found, args, background)
 		return stdout, stderr
 	}
 
