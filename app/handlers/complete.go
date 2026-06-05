@@ -39,6 +39,11 @@ func HandleComplete(cmd string) string {
 		return fmt.Sprintf("complete -C '%s' %s\n", script, command)
 	}
 
+	if len(fields) >= 3 && fields[1] == "-r" {
+		command := fields[2]
+		RemoveCompletion(command)
+	}
+
 	return ""
 }
 
@@ -157,4 +162,8 @@ func RunCompleter(line string) (string, CompletionResult) {
 	os.Stdout.WriteString(newLine)
 
 	return newLine, Completed
+}
+
+func RemoveCompletion(cmd string) {
+	delete(register, cmd)
 }
