@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
+	"github.com/google/shlex"
 )
 
 var first bool = true
@@ -139,9 +140,15 @@ func LongestCommonPrefix(matches []string) string {
 func HandleFileAutocomplete(input []byte) []byte {
 	line := string(input)
 
-	fields := strings.Split(line, " ")
-	if len(fields) < 2 {
+	fields, _ := shlex.Split(line)
+
+	if len(fields) < 1 {
 		return input
+	}
+
+	// Preserve trailing-space completion.
+	if strings.HasSuffix(line, " ") {
+		fields = append(fields, "")
 	}
 
 	prefix := fields[len(fields)-1]
@@ -194,19 +201,20 @@ func HandleFileAutocomplete(input []byte) []byte {
 		first = true
 
 		os.Stdout.WriteString("\r\n")
+
 		display := make([]string, 0, len(matches))
 		for _, m := range matches {
 			display = append(display, DisplayName(m))
 		}
+
 		os.Stdout.WriteString(strings.Join(display, "  "))
 		os.Stdout.WriteString("\r\n")
 		os.Stdout.WriteString("$ ")
-		os.Stdout.WriteString(string(input))
+		os.Stdout.WriteString(line)
 
 		return input
 	}
 }
-
 func FindFilesAndDirs(prefix string) []string {
 	dir := "."
 	base := prefix

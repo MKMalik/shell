@@ -51,18 +51,38 @@ func GetComplete(cmd string) *string {
 func RunCompleter(line string) (string, bool) {
 	fields := strings.Fields(line)
 
-	if len(fields) != 1 {
+	if len(fields) == 0 {
 		return "", false
 	}
 
-	cmd := fields[0]
+	arg0 := fields[0]
 
-	path := GetComplete(cmd)
+	path := GetComplete(arg0)
 	if path == nil {
 		return "", false
 	}
 
-	out, err := exec.Command(*path).Output()
+	arg1 := ""
+	arg2 := ""
+
+	if len(fields) >= 2 {
+		arg1 = fields[len(fields)-2]
+	}
+
+	arg2 = fields[len(fields)-1]
+
+	args := []string{
+		fields[0], // git
+		arg2,      // get
+		arg1,      // remote
+	}
+
+	out, err := exec.Command(*path, args...).CombinedOutput()
+
+	// fmt.Printf("args=%q\n", args)
+	// fmt.Printf("output=%q\n", string(out))
+	// fmt.Printf("err=%v\n", err)
+
 	if err != nil {
 		return "", false
 	}
@@ -72,10 +92,17 @@ func RunCompleter(line string) (string, bool) {
 		return "", false
 	}
 
-	newLine := line + candidate + " "
+	var newLine string
+
+	if strings.HasSuffix(line, " ") {
+		newLine = line + candidate + " "
+	} else {
+		fields[len(fields)-1] = candidate
+		newLine = strings.Join(fields, " ") + " "
+	}
 
 	os.Stdout.WriteString("\r\033[2K$ ")
-	os.Stdout.WriteString(strings.Split(newLine, "\n")[0]) // single line
+	os.Stdout.WriteString(newLine)
 
 	return newLine, true
 }
