@@ -7,6 +7,7 @@ var Builtins = map[Builtin]func(string) string{
 	Pwd:      HandlePwd,
 	Cd:       HandleCd,
 	Complete: HandleComplete,
+	Jobs:     HandleJobs,
 }
 
 var BuiltinNames = map[Builtin]struct{}{}
@@ -31,4 +32,5 @@ const (
 	Pwd      Builtin = "pwd"
 	Cd       Builtin = "cd"
 	Complete Builtin = "complete"
+	Jobs     Builtin = "jobs"
 )
