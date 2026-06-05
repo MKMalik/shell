@@ -77,11 +77,15 @@ func RunCompleter(line string) (string, bool) {
 		arg1,      // remote
 	}
 
-	out, err := exec.Command(*path, args...).CombinedOutput()
+	cmd := exec.Command(*path, args...)
 
-	// fmt.Printf("args=%q\n", args)
-	// fmt.Printf("output=%q\n", string(out))
-	// fmt.Printf("err=%v\n", err)
+	cmd.Env = append(
+		os.Environ(),
+		"COMP_LINE="+line,
+		fmt.Sprintf("COMP_POINT=%d", len(line)),
+	)
+
+	out, err := cmd.Output()
 
 	if err != nil {
 		return "", false
