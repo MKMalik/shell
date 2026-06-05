@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
+	"github.com/codecrafters-io/shell-starter-go/app/utils"
 	"github.com/google/shlex"
 )
 
@@ -48,7 +49,7 @@ func HandleCommandAutocomplete(input []byte) []byte {
 		os.Stdout.WriteString(" ")
 		return []byte(matches[0] + " ")
 	default:
-		lcp := LongestCommonPrefix(matches)
+		lcp := utils.LongestCommonPrefix(matches)
 
 		if len(lcp) > len(input) {
 			suffix := lcp[len(input):]
@@ -118,25 +119,6 @@ func FindExecutables(prefix string) []string {
 	return matches
 }
 
-func LongestCommonPrefix(matches []string) string {
-	if len(matches) == 0 {
-		return ""
-	}
-
-	prefix := matches[0]
-
-	for _, s := range matches[1:] {
-		for !strings.HasPrefix(s, prefix) {
-			if len(prefix) == 0 {
-				return ""
-			}
-			prefix = prefix[:len(prefix)-1]
-		}
-	}
-
-	return prefix
-}
-
 func HandleFileAutocomplete(input []byte) []byte {
 	line := string(input)
 
@@ -180,7 +162,7 @@ func HandleFileAutocomplete(input []byte) []byte {
 		return []byte(newInput)
 
 	default:
-		lcp := LongestCommonPrefix(matches)
+		lcp := utils.LongestCommonPrefix(matches)
 
 		if len(lcp) > len(prefix) {
 			fields[len(fields)-1] = lcp

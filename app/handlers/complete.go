@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/codecrafters-io/shell-starter-go/app/utils"
 	"github.com/google/shlex"
 )
 
@@ -107,6 +108,22 @@ func RunCompleter(line string) (string, CompletionResult) {
 	}
 
 	if len(candidates) > 1 {
+		current := fields[len(fields)-1]
+		lcp := utils.LongestCommonPrefix(candidates)
+
+		if len(lcp) > len(current) {
+			fields[len(fields)-1] = lcp
+
+			newLine := strings.Join(fields, " ")
+
+			os.Stdout.WriteString("\r\033[2K$ ")
+			os.Stdout.WriteString(newLine)
+
+			completerFirst = true
+
+			return newLine, Completed
+		}
+
 		if completerFirst {
 			completerFirst = false
 			os.Stdout.WriteString("\a")
@@ -123,7 +140,6 @@ func RunCompleter(line string) (string, CompletionResult) {
 
 		return line, Handled
 	}
-
 	completerFirst = true
 
 	candidate := candidates[0]
