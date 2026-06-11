@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
+	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 	"github.com/codecrafters-io/shell-starter-go/app/utils"
 )
 
@@ -31,4 +33,7 @@ func ExecuteCommand(cmd string) {
 	utils.WriteOutput(stdout)
 	utils.WriteOutput(stderr)
 
+	if msg := handlers.ReapJobs(); msg != "" {
+		fmt.Print(msg)
+	}
 }
