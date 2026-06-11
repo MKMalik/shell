@@ -6,27 +6,14 @@ import (
 )
 
 func HandleJobs(_ string) string {
-	var running []Job
-
-	for _, job := range JobList {
-		if job.Status == "Running" {
-			running = append(running, job)
-		}
-	}
-
-	if len(running) == 0 {
-		return ""
-	}
-
 	var b strings.Builder
 
-	for i, job := range running {
+	for i, job := range JobList {
 		marker := " "
 
-		switch {
-		case i == len(running)-1:
+		if i == len(JobList)-1 {
 			marker = "+"
-		case i == len(running)-2:
+		} else if i == len(JobList)-2 {
 			marker = "-"
 		}
 
@@ -39,6 +26,18 @@ func HandleJobs(_ string) string {
 			job.CommandString,
 		)
 	}
+
+	// Reap jobs that were already shown as Done
+	filtered := JobList[:0]
+
+	for _, job := range JobList {
+		if job.Status == "Done" {
+			continue
+		}
+		filtered = append(filtered, job)
+	}
+
+	JobList = filtered
 
 	return b.String()
 }

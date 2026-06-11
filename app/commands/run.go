@@ -31,15 +31,11 @@ func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string)
 		})
 
 		go func(jobID int) {
-			err := cmd.Wait()
+			_ = cmd.Wait()
 
 			for i := range handlers.JobList {
 				if handlers.JobList[i].ID == jobID {
-					if err == nil {
-						handlers.JobList[i].Status = "Done"
-					} else {
-						handlers.JobList[i].Status = "Failed"
-					}
+					handlers.JobList[i].Status = "Done"
 					break
 				}
 			}
