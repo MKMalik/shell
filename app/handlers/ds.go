@@ -34,3 +34,17 @@ const (
 	Complete Builtin = "complete"
 	Jobs     Builtin = "jobs"
 )
+
+
+
+type Job struct {
+	ID            int
+	ProcessID     int
+	CommandString string
+	Status        string
+}
+
+var JobList []Job = make([]Job, 0)
+var CurrentJobId int = 1
+
+

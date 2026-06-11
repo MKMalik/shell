@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -37,24 +35,29 @@ func ProcessCmd(command string, background bool) (string, string) {
 		return "", ""
 	}
 
-	// Shell expressions
+	// shell operators: && || | ; > < ...
 	if containsShellSyntax(command) {
 		return HandleShell(command, background)
 	}
 
 	fields, err := shlex.Split(command)
-	if err != nil || len(fields) == 0 {
+	if err != nil {
 		return "", err.Error()
 	}
 
-	args := fields[1:]
-	cmd := handlers.Builtin(fields[0])
+	if len(fields) == 0 {
+		return "", ""
+	}
 
-	if fn, ok := handlers.Builtins[cmd]; ok {
+	if fn, ok := handlers.Builtins[handlers.Builtin(fields[0])]; ok {
 		return fn(command), ""
 	}
 
-	return HandleExternal(fields[0], args, background)
+	return HandleExternal(
+		fields[0],
+		fields[1:],
+		background,
+	)
 }
 
 func containsShellSyntax(cmd string) bool {
@@ -62,13 +65,6 @@ func containsShellSyntax(cmd string) bool {
 		"&&",
 		"||",
 		"|",
-		";",
-		">",
-		">>",
-		"<",
-		"<<",
-		"$(",
-		"`",
 	}
 
 	for _, op := range ops {
@@ -82,41 +78,21 @@ func containsShellSyntax(cmd string) bool {
 
 func HandleShell(command string, background bool) (string, string) {
 	cmd := exec.Command("sh", "-c", command)
-
-	var stdout, stderr bytes.Buffer
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if background {
-		if err := cmd.Start(); err != nil {
-			return "", err.Error()
-		}
-
-		go func() {
-			cmd.Wait()
-			fmt.Print("\r$ ")
-		}()
-
-		return "", ""
-	}
-	if err := cmd.Run(); err != nil {
-		if stderr.Len() > 0 {
-			return "", stderr.String()
-		}
-		return "", err.Error()
-	}
-
-	return stdout.String(), stderr.String()
+	return RunCommand(cmd, command, background)
 }
 
 func HandleExternal(command string, args []string, background bool) (string, string) {
 	found, _ := utils.ScanPath(os.Getenv("PATH"), command)
 
-	if found != nil {
-		stdout, stderr, _ := RunCommand(*found, args, background)
-		return stdout, stderr
+	if found == nil {
+		return "", command + ": command not found\n"
 	}
 
-	return "", command + ": command not found\n"
+	cmd := exec.Command(*found, args...)
+
+	return RunCommand(
+		cmd,
+		command+" "+strings.Join(args, " "),
+		background,
+	)
 }

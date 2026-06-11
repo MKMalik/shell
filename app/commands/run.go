@@ -5,40 +5,59 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 )
 
-func RunCommand(cmd string, args []string, background bool) (string, string, error) {
-	run := exec.Command(cmd, args...)
+func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string) {
+	var stdout, stderr bytes.Buffer
 
 	if background {
-		run.Stdout = os.Stdout
-		run.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
-		err := run.Start()
-		if err != nil {
-			return "", "", err
+		if err := cmd.Start(); err != nil {
+			return "", err.Error()
 		}
 
-		pid := run.Process.Pid
+		jobID := handlers.CurrentJobId
+		handlers.CurrentJobId++
 
-		go func() {
-			err := run.Wait()
+		handlers.JobList = append(handlers.JobList, handlers.Job{
+			ID:            jobID,
+			ProcessID:     cmd.Process.Pid,
+			CommandString: command,
+			Status:        "Running",
+		})
 
-			if err == nil {
-				// fmt.Printf("\n[%d]+ Done %s\n", 1, cmd)
+		go func(jobID int) {
+			err := cmd.Wait()
+
+			for i := range handlers.JobList {
+				if handlers.JobList[i].ID == jobID {
+					if err == nil {
+						handlers.JobList[i].Status = "Done"
+					} else {
+						handlers.JobList[i].Status = "Failed"
+					}
+					break
+				}
 			}
-		}()
+		}(jobID)
 
-		return fmt.Sprintf("[%d] %d\n", 1, pid), "", nil
+		return fmt.Sprintf("[%d] %d\n", jobID, cmd.Process.Pid), ""
 	}
 
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	run.Stdout = &stdout
-	run.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		// if stderr.Len() > 0 {
+		// 	return "", stderr.String()
+		// }
+		// return "", err.Error()
+		return stdout.String(), stderr.String()
+	}
 
-	err := run.Run()
-
-	return stdout.String(), stderr.String(), err
+	return stdout.String(), stderr.String()
 }
