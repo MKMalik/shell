@@ -12,6 +12,13 @@ func ExecuteCommand(cmd string) {
 		os.Exit(0)
 	}
 
+	background := false
+
+	if strings.HasSuffix(cmd, "&") {
+		background = true
+		cmd = strings.TrimSpace(strings.TrimSuffix(cmd, "&"))
+	}
+
 	redirect := utils.ParseRedirect(cmd)
 
 	if redirect.Valid {
@@ -19,8 +26,9 @@ func ExecuteCommand(cmd string) {
 		return
 	}
 
-	stdout, stderr := ProcessCmd(cmd)
+	stdout, stderr := ProcessCmd(cmd, background)
 
 	utils.WriteOutput(stdout)
 	utils.WriteOutput(stderr)
+
 }

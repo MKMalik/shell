@@ -3,7 +3,7 @@ package commands
 import "github.com/codecrafters-io/shell-starter-go/app/utils"
 
 func ExecuteRedirect(r utils.Redirect) {
-	stdout, stderr := ProcessCmd(r.Cmd)
+	stdout, stderr := ProcessCmd(r.Cmd, false)
 
 	if r.FD == 1 {
 		_ = utils.RedirectToFile(stdout, r.File, r.Append)
