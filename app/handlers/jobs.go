@@ -78,5 +78,9 @@ func ReapJobs() string {
 
 	JobList = filtered
 
+	if len(JobList) == 0 {
+		CurrentJobId = 1
+	}
+
 	return b.String()
 }

@@ -1,5 +1,7 @@
 package handlers
 
+import "sync"
+
 var Builtins = map[Builtin]func(string) string{
 	Echo:     HandleEcho,
 	Type:     HandleType,
@@ -35,8 +37,6 @@ const (
 	Jobs     Builtin = "jobs"
 )
 
-
-
 type Job struct {
 	ID            int
 	ProcessID     int
@@ -44,7 +44,29 @@ type Job struct {
 	Status        string
 }
 
-var JobList []Job = make([]Job, 0)
-var CurrentJobId int = 1
+var (
+	CurrentJobId int = 1
+	JobList          = []Job{}
+	JobMutex     sync.Mutex
+)
 
+func GetNextJobID() int {
+	id := 1
 
+	for {
+		found := false
+
+		for _, job := range JobList {
+			if job.ID == id {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return id
+		}
+
+		id++
+	}
+}

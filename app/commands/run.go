@@ -13,6 +13,7 @@ func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string)
 	var stdout, stderr bytes.Buffer
 
 	if background {
+
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
@@ -20,8 +21,9 @@ func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string)
 			return "", err.Error()
 		}
 
-		jobID := handlers.CurrentJobId
-		handlers.CurrentJobId++
+		handlers.JobMutex.Lock()
+
+		jobID := handlers.GetNextJobID()
 
 		handlers.JobList = append(handlers.JobList, handlers.Job{
 			ID:            jobID,
@@ -30,15 +32,22 @@ func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string)
 			Status:        "Running",
 		})
 
-		go func(jobID int) {
+		handlers.JobMutex.Unlock()
+
+		go func(id int) {
+
 			_ = cmd.Wait()
 
+			handlers.JobMutex.Lock()
+			defer handlers.JobMutex.Unlock()
+
 			for i := range handlers.JobList {
-				if handlers.JobList[i].ID == jobID {
+				if handlers.JobList[i].ID == id {
 					handlers.JobList[i].Status = "Done"
 					break
 				}
 			}
+
 		}(jobID)
 
 		return fmt.Sprintf("[%d] %d\n", jobID, cmd.Process.Pid), ""
@@ -47,11 +56,9 @@ func RunCommand(cmd *exec.Cmd, command string, background bool) (string, string)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	if err := cmd.Run(); err != nil {
-		// if stderr.Len() > 0 {
-		// 	return "", stderr.String()
-		// }
-		// return "", err.Error()
+	err := cmd.Run()
+
+	if err != nil {
 		return stdout.String(), stderr.String()
 	}
 
