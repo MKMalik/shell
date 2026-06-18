@@ -13,6 +13,8 @@ func ExecuteCommand(cmd string) {
 		handlers.HandleExit()
 	}
 
+	cmd = ExpandVars(cmd, handlers.GetDeclaredMap())
+
 	background := false
 
 	if strings.HasSuffix(cmd, "&") {
@@ -35,4 +37,45 @@ func ExecuteCommand(cmd string) {
 	if msg := handlers.ReapJobs(); msg != "" {
 		fmt.Print(msg)
 	}
+}
+
+func ExpandVars(input string, vars map[string]string) string {
+	var out strings.Builder
+
+	for i := 0; i < len(input); i++ {
+		if input[i] != '$' {
+			out.WriteByte(input[i])
+			continue
+		}
+
+		i++ // skip $
+
+		if i >= len(input) {
+			out.WriteByte('$')
+			break
+		}
+
+		start := i
+
+		for i < len(input) && isVarChar(input[i]) {
+			i++
+		}
+
+		name := input[start:i]
+
+		if val, ok := vars[name]; ok {
+			out.WriteString(val)
+		}
+
+		i-- // step back because for-loop will increment
+	}
+
+	return out.String()
+}
+
+func isVarChar(c byte) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') ||
+		c == '_'
 }

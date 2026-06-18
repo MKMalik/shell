@@ -7,6 +7,18 @@ import (
 
 var declareValues map[string]string = map[string]string{}
 
+func GetDeclaredMap() map[string]string {
+	return declareValues
+}
+
+func GetDeclare(variable string) *string {
+	val, ok := declareValues[variable]
+	if !ok {
+		return nil
+	}
+	return &val
+}
+
 func HandleDeclare(cmd string) string {
 	fields := strings.Fields(cmd)
 	declared := fields[1]
