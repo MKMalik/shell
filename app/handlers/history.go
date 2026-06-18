@@ -2,29 +2,50 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 var HistoryList []string = make([]string, 0)
 
 func HandleHistory(cmd string) string {
-	result := make([]string, 0)
-	for index, val := range HistoryList {
-		result = append(result, fmt.Sprintf("    %v  %v", index+1, val))
+	args := strings.Fields(cmd)
+
+	limit := len(HistoryList)
+
+	if len(args) == 2 {
+		if n, err := strconv.Atoi(args[1]); err == nil {
+			limit = n
+		}
 	}
-	return strings.Join(result, "\n")
+
+	start := max(len(HistoryList) - limit, 0)
+
+	var history []string
+
+	for i := start; i < len(HistoryList); i++ {
+		history = append(history, fmt.Sprintf(
+			"    %d  %s",
+			i+1,
+			HistoryList[i],
+		))
+	}
+
+	return strings.Join(history, "\n")
+}
+
+func LastN(list []string, n int) []string {
+	if n <= 0 {
+		return []string{}
+	}
+
+	if n > len(list) {
+		n = len(list)
+	}
+
+	return list[len(list)-n:]
 }
 
 func AppendHistory(cmd string) {
 	HistoryList = append(HistoryList, cmd)
-}
-
-func reverse(s []string) []string {
-	out := make([]string, len(s))
-
-	for i := range s {
-		out[len(s)-1-i] = s[i]
-	}
-
-	return out
 }
