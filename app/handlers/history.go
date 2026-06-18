@@ -9,6 +9,7 @@ import (
 
 var HistoryList []string = make([]string, 0)
 var currentHistoryIndex = len(HistoryList)
+var historyWriteIndex = 0
 
 func HandleHistory(cmd string) string {
 	args := strings.Fields(cmd)
@@ -43,6 +44,32 @@ func HandleHistory(cmd string) string {
 			[]byte(strings.Join(HistoryList, "\n")+"\n"),
 			0644,
 		)
+		return ""
+	}
+
+	if len(args) > 1 && args[1] == "-a" {
+		if len(args) < 3 {
+			return ""
+		}
+
+		f, err := os.OpenFile(
+			args[2],
+			os.O_CREATE|os.O_WRONLY|os.O_APPEND,
+			0644,
+		)
+		if err != nil {
+			return ""
+		}
+		defer f.Close()
+
+		if historyWriteIndex < len(HistoryList) {
+			_, _ = f.WriteString(
+				strings.Join(HistoryList[historyWriteIndex:], "\n") + "\n",
+			)
+
+			historyWriteIndex = len(HistoryList)
+		}
+
 		return ""
 	}
 
