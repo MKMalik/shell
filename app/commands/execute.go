@@ -48,26 +48,41 @@ func ExpandVars(input string, vars map[string]string) string {
 			continue
 		}
 
-		i++ // skip $
+		i++
 
 		if i >= len(input) {
 			out.WriteByte('$')
 			break
 		}
 
-		start := i
+		var name string
 
-		for i < len(input) && isVarChar(input[i]) {
+		if input[i] == '{' {
+			// ${VAR}
 			i++
-		}
+			start := i
 
-		name := input[start:i]
+			for i < len(input) && input[i] != '}' {
+				i++
+			}
+
+			name = input[start:i]
+
+		} else {
+			// $VAR
+			start := i
+
+			for i < len(input) && isVarChar(input[i]) {
+				i++
+			}
+
+			name = input[start:i]
+			i--
+		}
 
 		if val, ok := vars[name]; ok {
 			out.WriteString(val)
 		}
-
-		i-- // step back because for-loop will increment
 	}
 
 	return out.String()
