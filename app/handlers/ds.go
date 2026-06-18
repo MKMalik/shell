@@ -10,6 +10,7 @@ var Builtins = map[Builtin]func(string) string{
 	Cd:       HandleCd,
 	Complete: HandleComplete,
 	Jobs:     HandleJobs,
+	History:  HandleHistory,
 }
 
 var BuiltinNames = map[Builtin]struct{}{}
@@ -35,6 +36,7 @@ const (
 	Cd       Builtin = "cd"
 	Complete Builtin = "complete"
 	Jobs     Builtin = "jobs"
+	History  Builtin = "history"
 )
 
 type Job struct {
