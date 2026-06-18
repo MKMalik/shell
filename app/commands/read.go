@@ -2,11 +2,14 @@ package commands
 
 import (
 	"os"
+	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
 )
 
 func ReadCommand(buf []byte) (string, bool) {
+	// read history from HISTFILE env variable and append into HistoryList memory variable
+	LoadHistory()
 	os.Stdout.WriteString("\r\033[2K$ ")
 	var input []byte
 	for {
@@ -46,4 +49,19 @@ func ReadCommand(buf []byte) (string, bool) {
 			os.Stdout.Write(buf[:1])
 		}
 	}
+}
+
+func LoadHistory() {
+	file, err := os.ReadFile(os.Getenv("HISTFILE"))
+	if err != nil {
+		return
+	}
+
+	for val := range strings.SplitSeq(string(file), "\n") {
+		if val == "" {
+			continue
+		}
+		handlers.HistoryList = append(handlers.HistoryList, val)
+	}
+
 }
