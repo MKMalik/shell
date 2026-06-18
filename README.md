@@ -1,34 +1,167 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/49a262e9-7957-4242-b73a-4a800fbdc8e2)](https://app.codecrafters.io/users/MKMalik?r=2qF)
+# Shell (Go)
 
-This is a starting point for Go solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+A Unix shell implemented from scratch in Go following the Codecrafters
+"Build Your Own Shell" challenge.
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+The project focuses on understanding how a shell works internally:
+command parsing, process execution, terminal interaction, environment
+handling, and job control.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Implemented Features
 
-# Passing the first stage
+## Core Shell
 
-The entry point for your `shell` implementation is in `app/main.go`. Study and
-uncomment the relevant code, then run the command below to execute the tests on
-our servers:
+- Interactive REPL
+- Command prompt
+- Exit handling
+- Invalid command handling
+- Execute external programs
+- PATH executable lookup
+- TAB to autocomplete builtins, external binaries, paths, file names
+- Builtins:
+  - `echo`
+  - `type`
+  - `pwd`
+  - `cd`
+  - `echo`
+  - `complete`
+  - `history`
+  - `jobs`
+  - `declare`
+  - `exit`
 
-```sh
-codecrafters submit
+
+## Quoting & Escaping
+
+- Single quotes
+- Double quotes
+- Backslash escaping
+- Quoted executable execution
+
+## Redirection
+
+- Redirect stdout
+- Redirect stderr
+- Append stdout
+- Append stderr
+
+Examples:
+
+```bash
+echo hello > file.txt
+cat file.txt
+echo error 2> errors.txt
+echo hello >> file.txt
 ```
 
-Time to move on to the next stage!
+## Command Completion
 
-# Stage 2 & beyond
+- Builtin completion
+- Executable completion
+- Partial completion
+- Multiple matches
+- Filename completion
+- Directory completion
 
-Note: This section is for stages 2 and beyond.
+## Programmable Completion
 
-1. Ensure you have `go (1.26)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.go`.
-1. Run `codecrafters submit` to submit your solution to CodeCrafters. Test
-   output will be streamed to your terminal.
+- `complete` builtin
+- Register completion handlers
+- Environment-aware completion
+- Multiple completion candidates
+- Longest common prefix
+
+## Background Jobs
+
+- Run commands in background
+
+```bash
+sleep 10 &
+```
+
+- `jobs` builtin
+- Job tracking
+- Process cleanup
+- Job number reuse
+
+## History
+
+- `history` builtin
+- Limit history output
+
+```bash
+history 10
+```
+
+- Arrow key navigation
+- Execute previous commands
+- Persistent history
+
+Supported:
+
+```bash
+history -r file
+history -w file
+history -a file
+```
+
+## History Persistence
+
+- Read history from file
+- Write history to file
+- Append history
+- Load history using `HISTFILE`
+- Save history on exit
+
+## Shell Variables
+
+- `declare` builtin
+- Variable storage
+- Identifier validation
+- Parameter expansion
+
+Examples:
+
+```bash
+declare NAME=mk
+echo $NAME
+echo ${NAME}123
+```
+
+## In Progress
+
+## Pipelines
+
+Currently working on:
+
+```bash
+cat file | wc
+```
+
+Planned:
+
+- Dual command pipelines
+- Builtins inside pipelines
+- Multi-command pipelines
+
+## Tech Stack
+
+- Go
+- Standard library only
+
+Main packages used:
+
+- `os/exec` — process execution
+- `os` — filesystem and environment
+- `io` — streams and pipes
+- terminal input handling
+
+## Purpose
+
+This project is a learning implementation of shell internals:
+
+- How processes are created
+- How stdin/stdout/stderr are connected
+- How terminals handle input
+- How shells manage state
+- How command execution pipelines work
