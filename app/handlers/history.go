@@ -7,6 +7,7 @@ import (
 )
 
 var HistoryList []string = make([]string, 0)
+var currentHistoryIndex = 0
 
 func HandleHistory(cmd string) string {
 	args := strings.Fields(cmd)
@@ -19,7 +20,7 @@ func HandleHistory(cmd string) string {
 		}
 	}
 
-	start := max(len(HistoryList) - limit, 0)
+	start := max(len(HistoryList)-limit, 0)
 
 	var history []string
 
@@ -32,6 +33,24 @@ func HandleHistory(cmd string) string {
 	}
 
 	return strings.Join(history, "\n")
+}
+
+func HistoryUp() []byte {
+	result := []byte(HistoryList[currentHistoryIndex])
+	currentHistoryIndex--
+	if currentHistoryIndex < 0 {
+		currentHistoryIndex = 0
+	}
+	return result
+}
+
+func HistoryDown() []byte {
+	result := []byte(HistoryList[currentHistoryIndex])
+	currentHistoryIndex++
+	if currentHistoryIndex >= len(HistoryList) {
+		currentHistoryIndex = len(HistoryList) - 1
+	}
+	return result
 }
 
 func LastN(list []string, n int) []string {
@@ -48,4 +67,5 @@ func LastN(list []string, n int) []string {
 
 func AppendHistory(cmd string) {
 	HistoryList = append(HistoryList, cmd)
+	currentHistoryIndex = len(HistoryList) - 1
 }
