@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -13,6 +14,28 @@ func HandleHistory(cmd string) string {
 	args := strings.Fields(cmd)
 
 	limit := len(HistoryList)
+
+	if len(args) > 1 && args[1] == "-r" {
+		if len(args) < 3 {
+			return ""
+		}
+
+		file, err := os.ReadFile(args[2])
+		if err != nil {
+			return ""
+		}
+
+		for val := range strings.SplitSeq(string(file), "\n") {
+			if val == "" {
+				continue
+			}
+			HistoryList = append(HistoryList, val)
+		}
+
+		currentHistoryIndex = len(HistoryList)
+
+		return ""
+	}
 
 	if len(args) == 2 {
 		if n, err := strconv.Atoi(args[1]); err == nil {
