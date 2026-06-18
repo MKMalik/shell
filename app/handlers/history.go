@@ -1,11 +1,18 @@
 package handlers
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 var HistoryList []string = make([]string, 0)
 
 func HandleHistory(cmd string) string {
-	return strings.Join(reverse(HistoryList), "\n")
+	result := make([]string, 0)
+	for index, val := range HistoryList {
+		result = append(result, fmt.Sprintf("    %v  %v", index+1, val))
+	}
+	return strings.Join(result, "\n")
 }
 
 func AppendHistory(cmd string) {
