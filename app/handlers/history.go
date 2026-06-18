@@ -39,7 +39,7 @@ func HandleHistory(cmd string) string {
 	}
 
 	if len(args) > 1 && args[1] == "-w" {
-		WriteHistoryToFile(args[2])
+		AppendHistoryToFile(args[2])
 		return ""
 	}
 
@@ -136,11 +136,22 @@ func AppendHistory(cmd string) {
 	currentHistoryIndex = len(HistoryList)
 }
 
-func WriteHistoryToFile(file string) {
-	os.WriteFile(
-		file,
-		[]byte(strings.Join(HistoryList, "\n")+"\n"),
-		0644,
+var HistoryFileIndex int = 0
+
+func AppendHistoryToFile(file string) {
+	if HistoryFileIndex >= len(HistoryList) {
+		return
+	}
+
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, _ = f.WriteString(
+		strings.Join(HistoryList[HistoryFileIndex:], "\n") + "\n",
 	)
 
+	HistoryFileIndex = len(HistoryList)
 }

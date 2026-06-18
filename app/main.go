@@ -11,8 +11,8 @@ func main() {
 	oldState, _ := term.MakeRaw(int(os.Stdin.Fd()))
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
+	commands.LoadHistory()
 	buf := make([]byte, 1)
-
 
 	for {
 		cmd, ok := commands.ReadCommand(buf)

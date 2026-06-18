@@ -9,7 +9,6 @@ import (
 
 func ReadCommand(buf []byte) (string, bool) {
 	// read history from HISTFILE env variable and append into HistoryList memory variable
-	LoadHistory()
 	os.Stdout.WriteString("\r\033[2K$ ")
 	var input []byte
 	for {
@@ -17,19 +16,19 @@ func ReadCommand(buf []byte) (string, bool) {
 		if n == 0 {
 			continue
 		}
-		switch {
-		case buf[0] == 13 || buf[0] == 10:
+		switch  buf[0]{
+		case 13, 10:
 			os.Stdout.WriteString("\r\n")
 			handlers.AppendHistory(string(input))
 			return string(input), true
-		case buf[0] == 9:
+		case 9:
 			input = HandleTab(input)
-		case buf[0] == 127 || buf[0] == 8:
+		case 127, 8:
 			input = HandleBackspace(input)
-		case buf[0] == 3:
-			handlers.WriteHistoryToFile(os.Getenv("HISTFILE"))
+		case 3:
+			handlers.AppendHistoryToFile(os.Getenv("HISTFILE"))
 			os.Exit(1)
-		case buf[0] == 27:
+		case 27:
 			// read 2 more bytes to complete the escape sequence
 			seq := make([]byte, 2)
 			os.Stdin.Read(seq)
@@ -58,6 +57,8 @@ func LoadHistory() {
 		return
 	}
 
+	handlers.HistoryList = nil
+
 	for val := range strings.SplitSeq(string(file), "\n") {
 		if val == "" {
 			continue
@@ -65,4 +66,5 @@ func LoadHistory() {
 		handlers.HistoryList = append(handlers.HistoryList, val)
 	}
 
+	handlers.HistoryFileIndex = len(handlers.HistoryList)
 }

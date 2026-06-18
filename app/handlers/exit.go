@@ -3,6 +3,6 @@ package handlers
 import "os"
 
 func HandleExit() {
-	WriteHistoryToFile(os.Getenv("HISTFILE"))
+	AppendHistoryToFile(os.Getenv("HISTFILE"))
 	os.Exit(0)
 }
