@@ -39,11 +39,7 @@ func HandleHistory(cmd string) string {
 	}
 
 	if len(args) > 1 && args[1] == "-w" {
-		os.WriteFile(
-			args[2],
-			[]byte(strings.Join(HistoryList, "\n")+"\n"),
-			0644,
-		)
+		WriteHistoryToFile(args[2])
 		return ""
 	}
 
@@ -138,4 +134,13 @@ func LastN(list []string, n int) []string {
 func AppendHistory(cmd string) {
 	HistoryList = append(HistoryList, cmd)
 	currentHistoryIndex = len(HistoryList)
+}
+
+func WriteHistoryToFile(file string) {
+	os.WriteFile(
+		file,
+		[]byte(strings.Join(HistoryList, "\n")+"\n"),
+		0644,
+	)
+
 }

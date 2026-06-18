@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/handlers"
@@ -11,7 +10,7 @@ import (
 
 func ExecuteCommand(cmd string) {
 	if strings.TrimSpace(cmd) == "exit" {
-		os.Exit(0)
+		handlers.HandleExit()
 	}
 
 	background := false

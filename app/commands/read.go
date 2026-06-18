@@ -27,6 +27,7 @@ func ReadCommand(buf []byte) (string, bool) {
 		case buf[0] == 127 || buf[0] == 8:
 			input = HandleBackspace(input)
 		case buf[0] == 3:
+			handlers.WriteHistoryToFile(os.Getenv("HISTFILE"))
 			os.Exit(1)
 		case buf[0] == 27:
 			// read 2 more bytes to complete the escape sequence
