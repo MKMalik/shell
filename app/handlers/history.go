@@ -37,6 +37,15 @@ func HandleHistory(cmd string) string {
 		return ""
 	}
 
+	if len(args) > 1 && args[1] == "-w" {
+		os.WriteFile(
+			args[2],
+			[]byte(strings.Join(HistoryList, "\n")+"\n"),
+			0644,
+		)
+		return ""
+	}
+
 	if len(args) == 2 {
 		if n, err := strconv.Atoi(args[1]); err == nil {
 			limit = n
