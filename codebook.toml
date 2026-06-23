@@ -1,1 +1,4 @@
-words = ["RDONLY"]
+words = [
+    "Codecrafters",
+    "RDONLY",
+]
